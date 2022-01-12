@@ -1,0 +1,42 @@
+{
+  "github": {
+    "commit": "659e7e0df1ac7d7e876d07c33341f2e625cba3d4",
+    "repo": "borutb-fri/FMLD"
+  },
+  "annotations": {
+    "id": "FMLD_annotations.zip",
+    "src": "github"
+  },
+  "train": [
+    {
+      "img": {
+        "id": "15hGDLhsx8bLgLcIRD5DhYt5iBxnjNF1M",
+        "out": "wide-train.zip",
+	"src": "drive"
+      }
+    },
+    {
+      "img": {
+        "id": "17bRIiaGyrKLEDQOV2RlqbPQ9TyCZxq9k",
+        "out": "mafa-train.zip",
+	"src": "drive"
+      }
+    }
+  ],  
+  "test": [
+    {
+      "img": {
+        "id": "1GUCogbp16PMGa39thoMMeWxp7Rp5oM8Q",
+        "out": "wide-test.zip",
+	"src": "drive"
+      }
+    },
+    {
+      "img": {
+        "id": "1jJHdmmscqxvNQ2dxKUrLaHqW3w1Yo_9S",
+        "out": "mafa-test.zip",
+	"src": "drive"
+      }
+    }
+  ]
+}

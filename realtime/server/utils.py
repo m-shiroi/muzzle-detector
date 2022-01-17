@@ -1,7 +1,7 @@
 import sys
 import cv2
 import io
-import numpy
+import numpy as np
 import face_recognition as fr
 import matplotlib.pyplot as plt
 import torch
@@ -25,33 +25,37 @@ class Stream:
 
         while True:
             _, img = video_cap.read()
+            img_pil = Image.fromarray(img)
+
+            eval_transform = transforms.Compose(
+                [
+                    transforms.Resize(256),
+                    transforms.CenterCrop(224),
+                ]
+            )
+            img = cv2.cvtColor(np.array(eval_transform(img_pil)), cv2.COLOR_RGB2BGR)
 
             for coords in self.locate_faces(img):
                 x, y, w, h = coords
-
-                img_crop = img[
-                    y : y + h + self.face_scale, x : x + w + self.face_scale
-                ].copy()
-                img_pil = Image.fromarray(img_crop)
+                x = np.array(
+                    [y, x, h, w, self.face_scale],
+                    dtype=np.int32,
+                )
 
                 eval_transform = transforms.Compose(
                     [
-                        transforms.Resize(256),
-                        transforms.CenterCrop(224),
                         transforms.ToTensor(),
-                        transforms.Normalize(
-                            mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
-                        ),
                     ]
                 )
+
+                img_pil = Image.fromarray(img)
                 tensor = eval_transform(img_pil)
 
                 buff = io.BytesIO()
                 torch.save(tensor, buff)
                 buff.seek(0)
 
-                yield buff.read()  # <-- passing torch tensor
-                # yield cv2.imencode(".jpg", img_crop)[1].tobytes() # <-- to pass raw image
+                yield b"\n--coords\n" + x.tobytes() + b"\n" + buff.read()  # <-- passing torch tensor
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 video_cap.release()
@@ -67,4 +71,4 @@ class Stream:
         frame_gen = self.get_frames()
         while True:
             frame = next(frame_gen)
-            yield b'Content-Type: image/jpeg\n\n' + frame + b'\n--frame\n'
+            yield b"Content-Type: image/jpeg\n" + frame + b"\n--frame\n"

@@ -2,17 +2,19 @@
 
 
 import io
-import cv2
-import torch
-import requests
-import numpy as np
-from PIL import Image
-import matplotlib.pyplot as plt
-import torchvision.transforms as transforms
-import torchvision
+from collections.abc import Callable
 from statistics import mode
-from torch.utils.data import DataLoader
+
+import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+import requests
+import torch
+import torchvision
+import torchvision.transforms as transforms
+from PIL import Image
 from torch import nn
+from torch.utils.data import DataLoader
 
 CORRECT = 0
 INCORRECT = 1
@@ -20,9 +22,13 @@ INCORRECT = 1
 GREEN = (0, 255, 0)
 RED = (0, 0, 255)
 
-def get_data(onTensorLoad):
+RES32 = "../models/resnet34_SMALL_10_epoch_Last_Linear.pt"
+MOBILE = "../models/mobilenet_v3_small_1_Linear_25e_20000_7000.pt"
+
+
+def get_data(onTensorLoad: Callable[[torch.Tensor, np.array], None]):
     settings = {"interval": "1000", "count": "20"}
-    url = "http://192.168.88.154:5000/stream"  # Note: change to ur ip
+    url = "http://192.168.2.113:5000/stream"
 
     r = requests.get(url, params=settings, stream=True)
 
@@ -57,7 +63,7 @@ def get_data(onTensorLoad):
             buffer += line + b"\n" if line else b""
 
 
-def draw_rectangle(cv_img, coords, color=(255, 192, 203)):
+def draw_rectangle(cv_img: np.ndarray, coords: np.array, color=(255, 192, 203)):
     y, x, h, w, rOffset = coords
     cv2.rectangle(
         cv_img,
@@ -67,56 +73,42 @@ def draw_rectangle(cv_img, coords, color=(255, 192, 203)):
         2,
     )
 
-def predict(tns):
+
+def predict(tensor: torch.Tensor):
     with torch.no_grad():
-        if len(tns.size()) == 3:
-            data = tns.unsqueeze(0)
+        if len(tensor.size()) == 3:
+            data = tensor.unsqueeze(0)
         else:
-            data = tns
+            data = tensor
         output = model(data)
         ret, prediction = torch.max(output.data, 1)
-        
-        return mode ( prediction )
 
-# TODO: change func name
-def test(tensor, coords):
+        return mode(prediction)
+
+
+def detect_mask(tensor: torch.Tensor, coords: np.array):
     transformation = transforms.ToPILImage()
-    trf= transforms.Compose([
+    trf = transforms.Compose(
+        [
             transformation,
             transforms.Resize(size=(224, 224)),
             transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406],
-                                 [0.229, 0.224, 0.225])
-    ])
-    
-    
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+        ]
+    )
+
     img = transformation(tensor)
     img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
-    # print("tensor", "-- tensor test")
-    # print(coords)
+    if len(coords):
+        crop = lambda tsr, to_data, y, x, h, w, _: to_data(tsr[:, y : y + h, x : x + w])
 
-    # Note: here u can access full frame as 'img_cv' & detected face coordinates via 'coords'
-    # Model will probably be here
-    
-    crop = lambda tsr, to_data, y, x, h, w, _: to_data(
-                tsr[:, y: y+h, x: x+w]
-            )  
-    
-
-    
-    res = predict ( crop ( tensor, trf, *coords ) )
-    draw_rectangle(img_cv, coords, GREEN if res == CORRECT else RED)
-    
-    
-    # y, x, h, w, rOffset = coords
-    # imgCrop = img[y:y+h+rOffset, x:x+w+rOffset].copy()
+        res = predict(crop(tensor, trf, *coords))
+        draw_rectangle(img_cv, coords, GREEN if res == CORRECT else RED)
 
     cv2.imshow("image", img_cv)
     cv2.waitKey(1)
 
-RES32 = "../../models/resnet34_SMALL_10_epoch_Last_Linear.pt"
-MOBILE = "../../models/mobilenet_v3_small_1_Linear_25e_20000_7000.pt"
 
 if __name__ == "__main__":
     my_model = MOBILE
@@ -126,7 +118,7 @@ if __name__ == "__main__":
     elif my_model == MOBILE:
         model = torchvision.models.mobilenet_v3_small()
         model.fc = nn.Linear(1024, 2)
-        
+
     model.load_state_dict(torch.load(my_model))
     model.eval()
-    get_data(test)
+    get_data(detect_mask)

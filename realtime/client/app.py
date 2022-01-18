@@ -115,10 +115,18 @@ def test(tensor, coords):
     cv2.imshow("image", img_cv)
     cv2.waitKey(1)
 
+RES32 = "../../models/resnet34_SMALL_10_epoch_Last_Linear.pt"
+MOBILE = "../../models/mobilenet_v3_small_1_Linear_25e_20000_7000.pt"
 
 if __name__ == "__main__":
-    model = torchvision.models.mobilenet_v3_small(pretrained=True)
-    model.fc = nn.Linear(1024, 2)
-    model.load_state_dict(torch.load("../../models/mobilenet_v3_small_1_Linear_25e_20000_7000.pt"))
+    my_model = MOBILE
+    if my_model == RES32:
+        model = torchvision.models.resnet34()
+        model.fc = nn.Linear(512, 2)
+    elif my_model == MOBILE:
+        model = torchvision.models.mobilenet_v3_small()
+        model.fc = nn.Linear(1024, 2)
+        
+    model.load_state_dict(torch.load(my_model))
     model.eval()
     get_data(test)

@@ -2,6 +2,7 @@
 
 
 import io
+from collections.abc import Callable
 from statistics import mode
 
 import cv2
@@ -21,8 +22,11 @@ INCORRECT = 1
 GREEN = (0, 255, 0)
 RED = (0, 0, 255)
 
+RES32 = "../models/resnet34_SMALL_10_epoch_Last_Linear.pt"
+MOBILE = "../models/mobilenet_v3_small_1_Linear_25e_20000_7000.pt"
 
-def get_data(onTensorLoad):
+
+def get_data(onTensorLoad: Callable[[torch.Tensor, np.array], None]):
     settings = {"interval": "1000", "count": "20"}
     url = "http://192.168.2.113:5000/stream"
 
@@ -59,7 +63,7 @@ def get_data(onTensorLoad):
             buffer += line + b"\n" if line else b""
 
 
-def draw_rectangle(cv_img, coords, color=(255, 192, 203)):
+def draw_rectangle(cv_img: np.ndarray, coords: np.array, color=(255, 192, 203)):
     y, x, h, w, rOffset = coords
     cv2.rectangle(
         cv_img,
@@ -70,20 +74,19 @@ def draw_rectangle(cv_img, coords, color=(255, 192, 203)):
     )
 
 
-def predict(tns):
+def predict(tensor: torch.Tensor):
     with torch.no_grad():
-        if len(tns.size()) == 3:
-            data = tns.unsqueeze(0)
+        if len(tensor.size()) == 3:
+            data = tensor.unsqueeze(0)
         else:
-            data = tns
+            data = tensor
         output = model(data)
         ret, prediction = torch.max(output.data, 1)
 
         return mode(prediction)
 
 
-# TODO: change func name
-def test(tensor, coords):
+def detect_mask(tensor: torch.Tensor, coords: np.array):
     transformation = transforms.ToPILImage()
     trf = transforms.Compose(
         [
@@ -106,8 +109,6 @@ def test(tensor, coords):
     cv2.imshow("image", img_cv)
     cv2.waitKey(1)
 
-RES32 = "../../models/resnet34_SMALL_10_epoch_Last_Linear.pt"
-MOBILE = "../../models/mobilenet_v3_small_1_Linear_25e_20000_7000.pt"
 
 if __name__ == "__main__":
     my_model = MOBILE
@@ -117,7 +118,7 @@ if __name__ == "__main__":
     elif my_model == MOBILE:
         model = torchvision.models.mobilenet_v3_small()
         model.fc = nn.Linear(1024, 2)
-        
+
     model.load_state_dict(torch.load(my_model))
     model.eval()
-    get_data(test)
+    get_data(detect_mask)

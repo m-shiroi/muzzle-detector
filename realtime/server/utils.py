@@ -18,7 +18,7 @@ class Stream:
         self.face_scale = 20
         self.video_source = -1
 
-    def _convert_data_to_bytes(self, payload, img):
+    def _convert_data_to_bytes(self, payload: np.array, img: Image):
         nparr = np.array(
             payload,
             dtype=np.int32,
@@ -38,7 +38,7 @@ class Stream:
         buff.seek(0)
         return nparr.tobytes(), buff.read()
 
-    def _locate_faces(self, img):
+    def _locate_faces(self, img: np.ndarray):
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         return self.classifier.detectMultiScale(img_gray, 1.1, 4)
 

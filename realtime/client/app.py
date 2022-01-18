@@ -9,11 +9,20 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
+import torchvision
+from statistics import mode
+from torch.utils.data import DataLoader
+from torch import nn
 
+CORRECT = 0
+INCORRECT = 1
+
+GREEN = (0, 255, 0)
+RED = (0, 0, 255)
 
 def get_data(onTensorLoad):
     settings = {"interval": "1000", "count": "20"}
-    url = "http://192.168.2.113:5000/stream"  # Note: change to ur ip
+    url = "http://192.168.88.154:5000/stream"  # Note: change to ur ip
 
     r = requests.get(url, params=settings, stream=True)
 
@@ -58,10 +67,29 @@ def draw_rectangle(cv_img, coords, color=(255, 192, 203)):
         2,
     )
 
+def predict(tns):
+    with torch.no_grad():
+        if len(tns.size()) == 3:
+            data = tns.unsqueeze(0)
+        else:
+            data = tns
+        output = model(data)
+        ret, prediction = torch.max(output.data, 1)
+        
+        return mode ( prediction )
 
 # TODO: change func name
 def test(tensor, coords):
     transformation = transforms.ToPILImage()
+    trf= transforms.Compose([
+            transformation,
+            transforms.Resize(size=(224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406],
+                                 [0.229, 0.224, 0.225])
+    ])
+    
+    
     img = transformation(tensor)
     img_cv = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
@@ -70,8 +98,17 @@ def test(tensor, coords):
 
     # Note: here u can access full frame as 'img_cv' & detected face coordinates via 'coords'
     # Model will probably be here
-    draw_rectangle(img_cv, coords, (0, 255, 0))
+    
+    crop = lambda tsr, to_data, y, x, h, w, _: to_data(
+                tsr[:, y: y+h, x: x+w]
+            )  
+    
 
+    
+    res = predict ( crop ( tensor, trf, *coords ) )
+    draw_rectangle(img_cv, coords, GREEN if res == CORRECT else RED)
+    
+    
     # y, x, h, w, rOffset = coords
     # imgCrop = img[y:y+h+rOffset, x:x+w+rOffset].copy()
 
@@ -80,4 +117,8 @@ def test(tensor, coords):
 
 
 if __name__ == "__main__":
+    model = torchvision.models.mobilenet_v3_small(pretrained=True)
+    model.fc = nn.Linear(1024, 2)
+    model.load_state_dict(torch.load("../../models/mobilenet_v3_small_1_Linear_25e_20000_7000.pt"))
+    model.eval()
     get_data(test)

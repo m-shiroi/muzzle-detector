@@ -105,3 +105,35 @@ For example, on our testing system `HP ProBook 450 G5` with `16GB of RAM` and  `
 - [3] WIDER FACE: [http://shuoyang1213.me/WIDERFACE/](http://shuoyang1213.me/WIDERFACE/)
 - [4] How to Correctly Detect Face-Masks for COVID-19 from Visual Information?: [https://www.mdpi.com/2076-3417/11/5/2070/htm](https://www.mdpi.com/2076-3417/11/5/2070/htm)
 - [5] RetinaFace: Single-stage Dense Face Localisation in the Wild: [https://arxiv.org/abs/1905.00641](https://arxiv.org/abs/1905.00641)
+```
+[1] 
+@Article{app11052070,
+AUTHOR = {Batagelj, Borut and Peer, Peter and Štruc, Vitomir and Dobrišek, Simon},
+TITLE = {How to Correctly Detect Face-Masks for COVID-19 from Visual Information?},
+JOURNAL = {Applied Sciences},
+VOLUME = {11},
+YEAR = {2021},
+NUMBER = {5},
+ARTICLE-NUMBER = {2070},
+URL = {https://www.mdpi.com/2076-3417/11/5/2070},
+ISSN = {2076-3417},
+DOI = {10.3390/app11052070}
+}
+
+[2]
+@inproceedings{ge2017detecting,
+  title={Detecting Masked Faces in the Wild with LLE-CNNs},
+  author={Ge, Shiming and Li, Jia and Ye, Qiting and Luo, Zhao},
+  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
+  pages={2682--2690},
+  year={2017}
+}
+
+[3]
+@inproceedings{yang2016wider,
+  Author = {Yang, Shuo and Luo, Ping and Loy, Chen Change and Tang, Xiaoou},
+  Booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+  Title = {WIDER FACE: A Face Detection Benchmark},
+  Year = {2016}
+}
+```
